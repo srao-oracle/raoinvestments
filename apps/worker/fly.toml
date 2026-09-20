@@ -2,7 +2,7 @@ app = "raoinvestments-worker"
 primary_region = "iad" # us-east-1, matches the Supabase project region
 
 [build]
-  dockerfile = "apps/worker/Dockerfile" # relative to the repo-root build context
+  dockerfile = "Dockerfile" # relative to apps/worker (the deploy context)
 
 [env]
   PORT = "8080"
@@ -15,7 +15,7 @@ primary_region = "iad" # us-east-1, matches the Supabase project region
   min_machines_running = 1 # always-on: the single upstream Massive socket lives here
 
   [[http_service.checks]]
-    grace_period = "15s"
+    grace_period = "20s"
     interval = "20s"
     method = "GET"
     timeout = "5s"

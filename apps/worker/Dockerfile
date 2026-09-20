@@ -1,14 +1,14 @@
-# Build context = repo root (pnpm workspace). Deploy with:
-#   fly deploy . -c apps/worker/fly.toml --dockerfile apps/worker/Dockerfile
+# Standalone worker image. Build context = apps/worker (deploy from that dir).
 FROM node:22-slim
-RUN corepack enable
-WORKDIR /repo
+WORKDIR /app
 
-COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter worker build
+COPY package.json ./
+RUN npm install
 
-WORKDIR /repo/apps/worker
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
 ENV NODE_ENV=production
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
