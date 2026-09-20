@@ -24,8 +24,9 @@ export const AGENT_CONFIG: Record<Role, AgentCfg> = TEST
       strategist: { model: MODELS.sonnet, effort: "high", maxTokens: 12000 },
       scout: { model: MODELS.sonnet, effort: "low", maxTokens: 8000 },
       // Deep analysis: Opus 5 at max reasoning with a large budget for a long,
-      // chart-rich, technically detailed thesis.
-      research: { model: MODELS.opus, effort: "max", maxTokens: 32000 },
+      // chart-rich, technically detailed thesis. Cap at 20k tokens: the non-streaming
+      // tool runner requires maxTokens <= ~21.3k (SDK's 10-min guard).
+      research: { model: MODELS.opus, effort: "max", maxTokens: 20000 },
       red_team: { model: MODELS.opus, effort: "xhigh", maxTokens: 20000 },
       portfolio_manager: { model: MODELS.opus, effort: "high", maxTokens: 16000 },
     };
