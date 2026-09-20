@@ -2,10 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { InstrumentChart } from "@/components/charts/instrument-chart";
+import { Markdown } from "@/components/markdown";
 import { usd, pct } from "@/lib/format";
 import { RejectForm } from "./reject-form";
 
 type OppEvent = { actor: string | null; event_type: string; payload: Record<string, unknown>; created_at: string };
+
+function bullets(items: string[]): string {
+  return items.map((i) => `- ${i}`).join("\n");
+}
 
 function approveHref(
   portfolioId: string,
@@ -54,9 +59,12 @@ export default async function OpportunityDetail({
   const events = (eventsData ?? []) as unknown as OppEvent[];
   const research = [...events].reverse().find((e) => e.actor === "research")?.payload;
   const verdict = [...events].reverse().find((e) => e.actor === "red_team")?.payload;
+  const proposal = [...events].reverse().find((e) => e.actor === "portfolio_manager")?.payload;
+  const analysis = (research?.analysis as string | undefined) ?? "";
   const bull = (research?.bull_case as string[] | undefined) ?? [];
   const bear = (research?.bear_case as string[] | undefined) ?? [];
   const catalysts = (research?.catalysts as string[] | undefined) ?? [];
+  const rationale = (proposal?.rationale as string | undefined) ?? (opp.sizing_rationale ?? "");
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +75,7 @@ export default async function OpportunityDetail({
         >
           ← Opportunities
         </Link>
-        <div className="mt-1 flex items-center gap-3">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="text-2xl font-semibold">{symbol}</h2>
           <span className="rounded-full bg-[var(--color-muted)] px-2 py-0.5 text-xs capitalize">
             {opp.status.replace(/_/g, " ")}
@@ -81,6 +89,11 @@ export default async function OpportunityDetail({
         </div>
       </div>
 
+      {/* Security chart shown by default */}
+      <section>
+        <InstrumentChart initialSymbol={symbol} />
+      </section>
+
       {opp.status === "proposed" ? (
         <div className="rounded-lg border border-[var(--color-primary)] p-4">
           <h3 className="text-sm font-semibold">Proposed trade</h3>
@@ -90,8 +103,10 @@ export default async function OpportunityDetail({
             <div><div className="text-xs text-[var(--color-muted-foreground)]">Notional</div>{opp.proposed_notional != null ? usd(Number(opp.proposed_notional)) : "—"}</div>
             <div><div className="text-xs text-[var(--color-muted-foreground)]">Max risk</div>{opp.max_risk != null ? usd(Number(opp.max_risk)) : "—"}</div>
           </div>
-          {opp.sizing_rationale ? (
-            <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">{opp.sizing_rationale}</p>
+          {rationale ? (
+            <div className="mt-3 text-sm text-[var(--color-muted-foreground)]">
+              <Markdown content={rationale} />
+            </div>
           ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
@@ -105,15 +120,24 @@ export default async function OpportunityDetail({
         </div>
       ) : null}
 
-      {opp.thesis ? (
+      {analysis ? (
+        <section className="rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 text-sm font-semibold">Analysis</h3>
+          <Markdown content={analysis} />
+        </section>
+      ) : opp.thesis ? (
         <section className="rounded-lg border border-[var(--color-border)] p-4">
           <h3 className="text-sm font-semibold">Thesis</h3>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">{opp.thesis}</p>
-          {catalysts.length ? (
-            <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-              Catalysts: {catalysts.join(" · ")}
-            </p>
-          ) : null}
+          <div className="mt-1 text-[var(--color-muted-foreground)]">
+            <Markdown content={opp.thesis} />
+          </div>
+        </section>
+      ) : null}
+
+      {catalysts.length ? (
+        <section className="rounded-lg border border-[var(--color-border)] p-4">
+          <h3 className="mb-1 text-sm font-semibold">Catalysts</h3>
+          <Markdown content={bullets(catalysts)} />
         </section>
       ) : null}
 
@@ -121,15 +145,11 @@ export default async function OpportunityDetail({
         <div className="grid gap-4 md:grid-cols-2">
           <section className="rounded-lg border border-[var(--color-border)] p-4">
             <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Bull case</h3>
-            <ul className="mt-2 list-disc pl-4 text-sm text-[var(--color-muted-foreground)]">
-              {bull.map((b, i) => <li key={i}>{b}</li>)}
-            </ul>
+            <Markdown content={bullets(bull)} />
           </section>
           <section className="rounded-lg border border-[var(--color-border)] p-4">
             <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">Bear case</h3>
-            <ul className="mt-2 list-disc pl-4 text-sm text-[var(--color-muted-foreground)]">
-              {bear.map((b, i) => <li key={i}>{b}</li>)}
-            </ul>
+            <Markdown content={bullets(bear)} />
           </section>
         </div>
       ) : null}
@@ -143,9 +163,7 @@ export default async function OpportunityDetail({
             {verdict.recommended_pct_nav != null ? ` · rec. ${verdict.recommended_pct_nav}% NAV` : ""}
           </p>
           {Array.isArray(verdict.red_flags) && verdict.red_flags.length ? (
-            <ul className="mt-2 list-disc pl-4 text-sm text-[var(--color-muted-foreground)]">
-              {(verdict.red_flags as string[]).map((f, i) => <li key={i}>{f}</li>)}
-            </ul>
+            <Markdown content={bullets(verdict.red_flags as string[])} />
           ) : null}
         </section>
       ) : null}
@@ -153,11 +171,6 @@ export default async function OpportunityDetail({
       {opp.rejected_reason ? (
         <p className="text-sm text-red-500">Rejected: {opp.rejected_reason}</p>
       ) : null}
-
-      <section>
-        <h3 className="mb-2 text-sm font-semibold">Chart</h3>
-        <InstrumentChart initialSymbol={symbol} />
-      </section>
     </div>
   );
 }

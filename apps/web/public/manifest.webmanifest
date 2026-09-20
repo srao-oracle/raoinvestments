@@ -1,6 +1,6 @@
 {
-  "name": "RaoInvestments",
-  "short_name": "RaoInvest",
+  "name": "Rao Investments",
+  "short_name": "Rao Invest",
   "description": "AI portfolio manager for stocks & options.",
   "start_url": "/portfolios",
   "scope": "/",

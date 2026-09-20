@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RaoInvestments",
+  title: "Rao Investments",
   description: "AI portfolio manager — hedge-fund-style agents for stocks & options.",
   manifest: "/manifest.webmanifest",
-  applicationName: "RaoInvestments",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RaoInvestments" },
+  applicationName: "Rao Investments",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Rao Investments" },
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
 };
 

@@ -23,7 +23,9 @@ export const AGENT_CONFIG: Record<Role, AgentCfg> = TEST
   : {
       strategist: { model: MODELS.sonnet, effort: "high", maxTokens: 12000 },
       scout: { model: MODELS.sonnet, effort: "low", maxTokens: 8000 },
-      research: { model: MODELS.sonnet, effort: "xhigh", maxTokens: 24000 },
+      // Deep analysis: Opus 5 at max reasoning with a large budget for a long,
+      // chart-rich, technically detailed thesis.
+      research: { model: MODELS.opus, effort: "max", maxTokens: 32000 },
       red_team: { model: MODELS.opus, effort: "xhigh", maxTokens: 20000 },
       portfolio_manager: { model: MODELS.opus, effort: "high", maxTokens: 16000 },
     };

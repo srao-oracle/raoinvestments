@@ -66,6 +66,7 @@ interface ThesisEmit {
   direction: "bullish" | "neutral" | "bearish";
   conviction: "low" | "medium" | "high";
   summary: string;
+  analysis: string;
   bull_case: string[];
   bear_case: string[];
   catalysts: string[];
@@ -83,7 +84,13 @@ async function runResearch(oppId: string, symbol: string, deps: ToolDeps) {
     inputSchema: z.object({
       direction: z.enum(["bullish", "neutral", "bearish"]),
       conviction: z.enum(["low", "medium", "high"]),
-      summary: z.string().max(1200),
+      summary: z.string().max(1200).describe("2-4 sentence executive summary of the thesis."),
+      analysis: z
+        .string()
+        .max(9000)
+        .describe(
+          "The full deep-dive analysis in GitHub-flavored MARKDOWN. Use headings, tables, and inline ```chart blocks (see system prompt). Cover business/fundamentals, technicals (PlayBit EMA, trend, returns), valuation, the option structure if any, catalysts with dates, and key risks. Ground every number in a tool result.",
+        ),
       bull_case: z.array(z.string()).max(6),
       bear_case: z.array(z.string()).max(6),
       catalysts: z.array(z.string()).max(6).default([]),
@@ -125,8 +132,8 @@ async function runResearch(oppId: string, symbol: string, deps: ToolDeps) {
     AGENT_CONFIG.research,
     deps,
     RESEARCH_SYSTEM,
-    [getBarsPlaybitTool(deps), getTickerDetailsTool(deps), getOptionChainTool(deps), WEB_SEARCH, writeThesis],
-    `Research ${symbol} (opportunity ${oppId}). Build a falsifiable long-only thesis and choose a specific structure, then call write_thesis once.`,
+    [getBarsPlaybitTool(deps), getTickerDetailsTool(deps), getQuoteTool(deps), getOptionChainTool(deps), WEB_SEARCH, writeThesis],
+    `Research ${symbol} (opportunity ${oppId}) in depth. Do a rigorous, technical + fundamental deep dive: pull technicals (get_bars_playbit), company reference (get_ticker_details), live quote, and — if proposing options — the option chain; corroborate the narrative and any numbers via web_search. Then call write_thesis once, with a thorough markdown "analysis" that embeds at least one price chart of ${symbol} plus any supporting charts (see the chart-block spec in your instructions).`,
   );
   return { thesis: holder.value, refused };
 }

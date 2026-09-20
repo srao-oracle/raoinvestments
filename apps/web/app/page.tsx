@@ -8,7 +8,7 @@ export default function Home() {
           raoinvestments.app
         </span>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          RaoInvestments
+          Rao Investments
         </h1>
         <p className="max-w-prose text-lg text-[var(--color-muted-foreground)]">
           A private, hedge-fund-style AI portfolio manager for stocks &amp; options. It develops

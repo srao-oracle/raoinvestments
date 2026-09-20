@@ -42,7 +42,13 @@ function resolveColor(name: string, lightFallback: string, darkFallback: string)
   return fallback;
 }
 
-export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: string }) {
+export function InstrumentChart({
+  initialSymbol = "SPY",
+  readOnly = false,
+}: {
+  initialSymbol?: string;
+  readOnly?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const [symbol, setSymbol] = useState(initialSymbol);
@@ -57,6 +63,9 @@ export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: str
 
     const text = resolveColor("--color-muted-foreground", "#71717a", "#a1a1aa");
     const grid = resolveColor("--color-border", "#e4e4e7", "#3f3f46");
+    // Monochrome EMA lines: strong = EMA(high,200) solid, soft = EMA(close,200) dashed.
+    const lineStrong = isDark() ? "#e4e4e7" : "#27272a";
+    const lineSoft = isDark() ? "#a1a1aa" : "#6b7280";
 
     const chart = createChart(el, {
       autoSize: true,
@@ -79,14 +88,15 @@ export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: str
       borderVisible: false,
     });
     const emaTopSeries = chart.addSeries(LineSeries, {
-      color: "#2563eb",
-      lineWidth: 1,
+      color: lineStrong,
+      lineWidth: 2,
       priceLineVisible: false,
       lastValueVisible: false,
     });
     const emaBotSeries = chart.addSeries(LineSeries, {
-      color: "#f59e0b",
+      color: lineSoft,
       lineWidth: 1,
+      lineStyle: 2, // dashed
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -145,22 +155,24 @@ export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: str
             </span>
           ) : null}
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const s = input.trim().toUpperCase();
-            if (s) setSymbol(s);
-          }}
-          className="flex items-center gap-1"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="h-8 w-24 rounded-md border border-[var(--color-border)] bg-transparent px-2 text-sm outline-none focus:border-[var(--color-primary)]"
-            placeholder="Ticker"
-            aria-label="Ticker symbol"
-          />
-        </form>
+        {readOnly ? null : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const s = input.trim().toUpperCase();
+              if (s) setSymbol(s);
+            }}
+            className="flex items-center gap-1"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="h-8 w-24 rounded-md border border-[var(--color-border)] bg-transparent px-2 text-sm outline-none focus:border-[var(--color-primary)]"
+              placeholder="Ticker"
+              aria-label="Ticker symbol"
+            />
+          </form>
+        )}
       </div>
       <div ref={containerRef} className="h-[320px] w-full" />
       {loading ? (
@@ -168,7 +180,7 @@ export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: str
       ) : null}
       {error ? <p className="mt-2 text-xs text-red-500">{error}</p> : null}
       <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">
-        PlayBit EMA: teal = EMA(high,200), amber = EMA(close,200). Daily bars.
+        PlayBit EMA: solid = EMA(high,200), dashed = EMA(close,200). Daily bars.
       </p>
     </div>
   );

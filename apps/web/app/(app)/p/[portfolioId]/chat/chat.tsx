@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Markdown } from "@/components/markdown";
 
 export type ChatMsg = { role: "user" | "assistant"; text: string };
 
@@ -48,20 +49,21 @@ export function Chat({ portfolioId, initial }: { portfolioId: string; initial: C
             Ask your portfolio manager anything — strategy, positions, an idea, or market context.
           </p>
         ) : null}
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div
-              className={
-                "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm " +
-                (m.role === "user"
-                  ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
-                  : "border border-[var(--color-border)]")
-              }
-            >
-              {m.text}
+        {messages.map((m, i) =>
+          m.role === "user" ? (
+            <div key={i} className="flex justify-end">
+              <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-[var(--color-primary)] px-3 py-2 text-sm text-[var(--color-primary-foreground)]">
+                {m.text}
+              </div>
             </div>
-          </div>
-        ))}
+          ) : (
+            <div key={i} className="flex justify-start">
+              <div className="max-w-[92%] rounded-2xl border border-[var(--color-border)] px-3 py-2">
+                <Markdown content={m.text} />
+              </div>
+            </div>
+          ),
+        )}
         {busy ? (
           <div className="flex justify-start">
             <div className="rounded-2xl border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-muted-foreground)]">

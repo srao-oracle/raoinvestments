@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runPipeline } from "@/lib/agents/pipeline";
 
-export const maxDuration = 300;
+// Deep Opus 5 research + red-team + PM can run several minutes; use the Pro ceiling.
+export const maxDuration = 800;
 
 export async function POST(
   req: Request,

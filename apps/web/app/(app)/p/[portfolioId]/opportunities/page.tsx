@@ -15,7 +15,7 @@ type Opp = {
 
 const STATUS_META: { key: string; label: string; hint: string; cls: string }[] = [
   { key: "proposed", label: "Proposed", hint: "awaiting your approval", cls: "text-[var(--color-primary)]" },
-  { key: "under_investigation", label: "Investigating", hint: "agents at work", cls: "text-amber-600 dark:text-amber-400" },
+  { key: "under_investigation", label: "Investigating", hint: "agents at work", cls: "text-[var(--color-foreground)]" },
   { key: "candidate", label: "Candidates", hint: "scouted", cls: "text-[var(--color-muted-foreground)]" },
   { key: "invested", label: "Invested", hint: "", cls: "text-emerald-600 dark:text-emerald-400" },
   { key: "closed", label: "Closed", hint: "", cls: "text-[var(--color-muted-foreground)]" },
