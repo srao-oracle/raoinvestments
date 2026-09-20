@@ -1,0 +1,34 @@
+# deps / build
+node_modules/
+.pnpm-store/
+.turbo/
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# env / secrets — never commit any of these
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+apps/worker/.env
+apps/worker/.env.local
+
+# Vercel
+.vercel
+
+# Fly
+fly.toml.bak
+*.pem
+
+# Supabase local
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# misc
+.DS_Store
+*.log
+coverage/
