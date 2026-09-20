@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@raoinvestments/shared";
+import type { Database } from "./database.types";
 
 /**
  * Service-role client — bypasses RLS. SERVER-ONLY. Only use in Server Actions / route

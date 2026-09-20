@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { Database } from "@raoinvestments/shared";
+import type { Database } from "./database.types";
 
 const PROTECTED_PREFIXES = ["/portfolios", "/p/"];
 

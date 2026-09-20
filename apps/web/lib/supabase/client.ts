@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@raoinvestments/shared";
+import type { Database } from "./database.types";
 
 /** Supabase client for Client Components (browser). Uses the publishable/anon key + RLS. */
 export function createClient() {
