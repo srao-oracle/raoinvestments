@@ -16,10 +16,24 @@ type TradeRow = {
 
 export default async function TradesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ portfolioId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { portfolioId } = await params;
+  const sp = await searchParams;
+  const str = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
+  const prefill =
+    str(sp.symbol) || str(sp.oppId)
+      ? {
+          symbol: str(sp.symbol),
+          assetClass: str(sp.assetClass),
+          action: str(sp.action),
+          quantity: str(sp.quantity),
+          oppId: str(sp.oppId),
+        }
+      : undefined;
   const supabase = await createClient();
   const { data } = await supabase
     .from("trades")
@@ -34,7 +48,7 @@ export default async function TradesPage({
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="mb-3 text-lg font-semibold">Record a fill</h2>
-        <RecordFillForm portfolioId={portfolioId} />
+        <RecordFillForm portfolioId={portfolioId} prefill={prefill} />
       </div>
 
       <section>

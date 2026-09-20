@@ -37,6 +37,7 @@ export async function recordFill(_prev: FillState, fd: FormData): Promise<FillSt
   const price = Number(fd.get("price"));
   const fees = Number(fd.get("fees") ?? 0) || 0;
   const executedAt = String(fd.get("executedAt") ?? "") || new Date().toISOString();
+  const oppId = String(fd.get("oppId") ?? "") || null;
 
   if (!symbol) return { error: "Symbol is required." };
   if (!(quantity > 0)) return { error: "Quantity must be positive." };
@@ -70,6 +71,7 @@ export async function recordFill(_prev: FillState, fd: FormData): Promise<FillSt
         multiplier: 1,
         executed_at: executedAt,
         created_by: user.id,
+        opportunity_id: oppId,
       });
       if (error) return { error: error.message };
     } else {
@@ -105,8 +107,17 @@ export async function recordFill(_prev: FillState, fd: FormData): Promise<FillSt
         multiplier: 100,
         executed_at: executedAt,
         created_by: user.id,
+        opportunity_id: oppId,
       });
       if (error) return { error: error.message };
+    }
+    if (oppId) {
+      // Link the fill to the opportunity and mark it invested (best-effort).
+      await admin
+        .from("opportunities")
+        .update({ status: "invested" })
+        .eq("id", oppId)
+        .eq("portfolio_id", portfolioId);
     }
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to record fill." };
@@ -114,6 +125,7 @@ export async function recordFill(_prev: FillState, fd: FormData): Promise<FillSt
 
   revalidatePath(`/p/${portfolioId}/trades`);
   revalidatePath(`/p/${portfolioId}/positions`);
+  revalidatePath(`/p/${portfolioId}/opportunities`);
   revalidatePath(`/p/${portfolioId}`);
   return { ok: `Recorded ${action.replace(/_/g, " ")} ${quantity} ${symbol}.` };
 }

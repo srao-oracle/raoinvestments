@@ -18,14 +18,37 @@ const OPTION_ACTIONS = [
   { v: "buy_to_close", l: "Buy to close" },
 ];
 
-export function RecordFillForm({ portfolioId }: { portfolioId: string }) {
-  const [assetClass, setAssetClass] = useState<"stock" | "option">("stock");
+export interface FillPrefill {
+  symbol?: string;
+  assetClass?: string;
+  action?: string;
+  quantity?: string;
+  oppId?: string;
+}
+
+export function RecordFillForm({
+  portfolioId,
+  prefill,
+}: {
+  portfolioId: string;
+  prefill?: FillPrefill;
+}) {
+  const [assetClass, setAssetClass] = useState<"stock" | "option">(
+    prefill?.assetClass === "option" ? "option" : "stock",
+  );
   const [state, action, pending] = useActionState<FillState, FormData>(recordFill, null);
 
   return (
     <form action={action} className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] p-4">
       <input type="hidden" name="portfolioId" value={portfolioId} />
       <input type="hidden" name="assetClass" value={assetClass} />
+      <input type="hidden" name="oppId" value={prefill?.oppId ?? ""} />
+
+      {prefill?.oppId ? (
+        <p className="rounded-md bg-[var(--color-muted)] px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
+          Recording an approved proposal — confirm the actual executed price/quantity.
+        </p>
+      ) : null}
 
       <div className="inline-flex w-fit rounded-md border border-[var(--color-border)] p-0.5 text-sm">
         {(["stock", "option"] as const).map((c) => (
@@ -48,11 +71,11 @@ export function RecordFillForm({ portfolioId }: { portfolioId: string }) {
       <div className="grid grid-cols-2 gap-3">
         <label className={labelCls}>
           {assetClass === "option" ? "Underlying" : "Symbol"}
-          <input name="symbol" className={inputCls} placeholder="AAPL" required />
+          <input name="symbol" defaultValue={prefill?.symbol} className={inputCls} placeholder="AAPL" required />
         </label>
         <label className={labelCls}>
           Action
-          <select name="action" className={inputCls} required>
+          <select name="action" defaultValue={prefill?.action} className={inputCls} required>
             {(assetClass === "stock" ? STOCK_ACTIONS : OPTION_ACTIONS).map((a) => (
               <option key={a.v} value={a.v}>
                 {a.l}
@@ -85,7 +108,7 @@ export function RecordFillForm({ portfolioId }: { portfolioId: string }) {
       <div className="grid grid-cols-3 gap-3">
         <label className={labelCls}>
           {assetClass === "option" ? "Contracts" : "Quantity"}
-          <input name="quantity" type="number" step="0.0001" min="0" inputMode="decimal" className={inputCls} required />
+          <input name="quantity" type="number" step="0.0001" min="0" inputMode="decimal" defaultValue={prefill?.quantity} className={inputCls} required />
         </label>
         <label className={labelCls}>
           Fill price
@@ -103,9 +126,7 @@ export function RecordFillForm({ portfolioId }: { portfolioId: string }) {
       </label>
 
       {state?.error ? <p className="text-sm text-red-500">{state.error}</p> : null}
-      {state?.ok ? (
-        <p className="text-sm text-emerald-600 dark:text-emerald-400">{state.ok}</p>
-      ) : null}
+      {state?.ok ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{state.ok}</p> : null}
 
       <button
         type="submit"
