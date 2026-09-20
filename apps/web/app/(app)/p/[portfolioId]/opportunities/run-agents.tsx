@@ -15,7 +15,25 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
     setMsg(null);
     try {
       const res = await fetch(`/api/agents/${portfolioId}/${kind}`, { method: "POST" });
-      const data = await res.json();
+      // The response may be a non-JSON error page (e.g. a gateway timeout), so
+      // parse defensively instead of letting res.json() throw "Unexpected token".
+      const raw = await res.text();
+      let data: {
+        error?: string;
+        candidates?: number;
+        updated?: boolean;
+        processed?: number;
+        results?: { symbol: string; outcome: string }[];
+      } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {
+          error: res.status === 504
+            ? "The agent took too long and the request timed out. It may still be running — refresh in a minute."
+            : raw.slice(0, 160) || `HTTP ${res.status}`,
+        };
+      }
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setMsg(
         kind === "scout"
