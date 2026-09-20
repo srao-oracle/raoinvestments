@@ -7,10 +7,10 @@ import {
   MODELS,
   priceUsd,
   logAgentRun,
-  assertNotKilled,
   drainRunner,
   type DrainableRunner,
 } from "./anthropic";
+import { agentPreflight } from "./budget";
 import { readStrategyTool, readPositionsTool, screenWatchlistTool } from "./tools";
 import { SCOUT_SYSTEM } from "./prompts";
 import type { ToolDeps } from "./deps";
@@ -35,7 +35,7 @@ interface EmittedCandidate {
 
 export async function runScout(portfolioId: string): Promise<ScoutResult> {
   const admin = createAdminClient();
-  await assertNotKilled(admin);
+  await agentPreflight(admin, portfolioId);
   const deps: ToolDeps = { portfolioId, admin, market: massive() };
 
   const { data: strat } = await admin

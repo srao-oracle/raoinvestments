@@ -5,10 +5,10 @@ import {
   client,
   MODELS,
   logAgentRun,
-  assertNotKilled,
   drainRunner,
   type DrainableRunner,
 } from "./anthropic";
+import { agentPreflight } from "./budget";
 import { readStrategyTool, readPositionsTool, listOpportunitiesTool } from "./tools";
 import { valuePortfolioTool } from "./risk-tools";
 import { getBarsPlaybitTool, getQuoteTool } from "./market-tools";
@@ -44,7 +44,7 @@ export async function runPortfolioChat(
   userMessage: string,
 ): Promise<{ reply: string; threadId: string }> {
   const admin = createAdminClient();
-  await assertNotKilled(admin);
+  await agentPreflight(admin, portfolioId);
   const deps: ToolDeps = { portfolioId, admin, market: massive() };
   const threadId = await getPortfolioThread(admin, portfolioId);
 

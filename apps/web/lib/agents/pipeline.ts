@@ -2,7 +2,8 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { createAdminClient } from "../supabase/admin";
 import { massive } from "../market/client";
-import { client, assertNotKilled, drainAndLog } from "./anthropic";
+import { client, drainAndLog } from "./anthropic";
+import { agentPreflight } from "./budget";
 import { AGENT_CONFIG, type AgentCfg } from "./config";
 import { validateRecommendation } from "./guardrails";
 import { readStrategyTool, readPositionsTool } from "./tools";
@@ -277,7 +278,7 @@ export async function runPipeline(
   opts: { maxCandidates?: number } = {},
 ): Promise<PipelineResult> {
   const admin = createAdminClient();
-  await assertNotKilled(admin);
+  await agentPreflight(admin, portfolioId);
   const deps: ToolDeps = { portfolioId, admin, market: massive() };
 
   const { data: cands } = await admin
@@ -327,7 +328,7 @@ export async function runStrategist(
   portfolioId: string,
 ): Promise<{ updated: boolean; summary: string }> {
   const admin = createAdminClient();
-  await assertNotKilled(admin);
+  await agentPreflight(admin, portfolioId);
   const deps: ToolDeps = { portfolioId, admin, market: massive() };
   let updated = false;
   let summary = "";

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/scout", "schedule": "*/15 13-20 * * 1-5" },
+    { "path": "/api/cron/strategy-review", "schedule": "0 12 * * 6" },
+    { "path": "/api/cron/eod-valuation", "schedule": "10 21 * * 1-5" },
+    { "path": "/api/cron/market-refresh", "schedule": "30 21 * * 1-5" }
+  ],
+  "functions": {
+    "app/api/cron/[job]/route.ts": { "maxDuration": 300 },
+    "app/api/agents/[portfolioId]/pipeline/route.ts": { "maxDuration": 300 }
+  }
+}
