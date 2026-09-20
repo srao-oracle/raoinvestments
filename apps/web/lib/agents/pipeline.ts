@@ -13,7 +13,8 @@ import {
   getOptionChainTool,
 } from "./market-tools";
 import { valuePortfolioTool, sizePositionTool, checkRiskTool } from "./risk-tools";
-import { RESEARCH_SYSTEM, RED_TEAM_SYSTEM, PM_SYSTEM } from "./prompts";
+import { fredSeriesTool } from "./macro-tools";
+import { RESEARCH_SYSTEM, RED_TEAM_SYSTEM, PM_SYSTEM, STRATEGIST_SYSTEM } from "./prompts";
 import type { ToolDeps } from "./deps";
 
 const WEB_SEARCH = { type: "web_search_20260209", name: "web_search", max_uses: 4 } as const;
@@ -319,4 +320,81 @@ export async function runPipeline(
   }
 
   return { processed: (cands ?? []).length, results };
+}
+
+/** Strategist: read macro + regime, then autonomously refresh the strategy doc (version bump). */
+export async function runStrategist(
+  portfolioId: string,
+): Promise<{ updated: boolean; summary: string }> {
+  const admin = createAdminClient();
+  await assertNotKilled(admin);
+  const deps: ToolDeps = { portfolioId, admin, market: massive() };
+  let updated = false;
+  let summary = "";
+
+  const proposeUpdate = betaZodTool({
+    name: "propose_strategy_update",
+    description:
+      "Persist the updated strategy (posture, themes, watchlist, active sleeves). Call exactly once.",
+    inputSchema: z.object({
+      risk_posture: z.enum(["risk_on", "risk_off", "neutral"]),
+      regime_note: z.string().max(600),
+      themes: z
+        .array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+            rationale: z.string(),
+            conviction: z.number().min(0).max(1),
+            example_tickers: z.array(z.string()).default([]),
+          }),
+        )
+        .max(6),
+      watchlist_tickers: z.array(z.string()).max(30),
+      active_strategies: z.array(z.string()).max(10),
+      change_reason: z.string().max(300),
+    }),
+    run: async (p) => {
+      const { data: cur } = await admin
+        .from("strategies")
+        .select("doc")
+        .eq("portfolio_id", portfolioId)
+        .eq("is_current", true)
+        .maybeSingle();
+      const curDoc = ((cur as { doc?: Record<string, unknown> } | null)?.doc ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const newDoc = {
+        ...curDoc,
+        risk_posture: p.risk_posture,
+        regime_note: p.regime_note,
+        themes: p.themes,
+        watchlist_themes: p.themes.map((t) => t.id),
+        watchlist_tickers: p.watchlist_tickers,
+        active_strategies: p.active_strategies,
+      };
+      summary = `${p.risk_posture} — ${p.regime_note.slice(0, 160)}`;
+      const { error } = await admin.rpc("set_current_strategy", {
+        p_portfolio: portfolioId,
+        p_doc: newDoc,
+        p_summary: summary,
+        p_change_reason: p.change_reason,
+        p_changed_by: "strategist",
+      });
+      if (error) return JSON.stringify({ ok: false, error: error.message });
+      updated = true;
+      return JSON.stringify({ ok: true });
+    },
+  });
+
+  await runAgent(
+    "strategist",
+    AGENT_CONFIG.strategist,
+    deps,
+    STRATEGIST_SYSTEM,
+    [fredSeriesTool(), getBarsPlaybitTool(deps), WEB_SEARCH, readStrategyTool(deps), proposeUpdate],
+    "Refresh the strategy now. Read macro (DGS10, T10Y2Y, CPIAUCSL, VIXCLS, UNRATE, FEDFUNDS), read SPY and sector ETFs (XLK, XLF, XLE) regime via get_bars_playbit, read the current strategy, then call propose_strategy_update once.",
+  );
+  return { updated, summary };
 }
