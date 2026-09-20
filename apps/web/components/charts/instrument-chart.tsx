@@ -14,10 +14,32 @@ type Candle = { time: number; open: number; high: number; low: number; close: nu
 type PbPoint = { time: number; emaTop: number; emaBot: number; regime: string };
 type BarsResponse = { symbol: string; candles: Candle[]; playbit: PbPoint[] };
 
-function cssVar(name: string, fallback: string): string {
+function isDark(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
+}
+
+// Resolve a Tailwind v4 theme token (OKLCH) to a color lightweight-charts can parse.
+// getComputedStyle returns modern `oklch()`/`lab()` strings that lightweight-charts'
+// parser rejects (throws "Failed to parse color"), so normalize via a canvas to
+// hex/rgb, and fall back to theme-matched hex if the browser can't normalize it.
+function resolveColor(name: string, lightFallback: string, darkFallback: string): string {
+  const fallback = isDark() ? darkFallback : lightFallback;
   if (typeof window === "undefined") return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (!raw) return fallback;
+  try {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = "#000000";
+      ctx.fillStyle = raw;
+      const resolved = ctx.fillStyle;
+      if (/^#[0-9a-f]{3,8}$/i.test(resolved) || /^rgba?\(/i.test(resolved)) return resolved;
+    }
+  } catch {
+    // ignore and use fallback
+  }
+  return fallback;
 }
 
 export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: string }) {
@@ -33,8 +55,8 @@ export function InstrumentChart({ initialSymbol = "SPY" }: { initialSymbol?: str
     const el = containerRef.current;
     if (!el) return;
 
-    const text = cssVar("--color-muted-foreground", "#8a8a8a");
-    const grid = cssVar("--color-border", "#2a2a2a");
+    const text = resolveColor("--color-muted-foreground", "#71717a", "#a1a1aa");
+    const grid = resolveColor("--color-border", "#e4e4e7", "#3f3f46");
 
     const chart = createChart(el, {
       autoSize: true,
