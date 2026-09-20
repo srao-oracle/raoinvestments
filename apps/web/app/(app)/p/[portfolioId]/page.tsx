@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { usd, signedUsd, pct } from "@/lib/format";
+import { InstrumentChart } from "@/components/charts/instrument-chart";
+import { AllocationChart } from "@/components/charts/allocation-chart";
+import { TargetReturnMeter } from "@/components/charts/target-return-meter";
 
 function StatTile({
   label,
@@ -48,7 +51,7 @@ export default async function DashboardPage({
     supabase.from("portfolios").select("cash_balance").eq("id", portfolioId).maybeSingle(),
     supabase
       .from("positions")
-      .select("quantity, avg_cost, multiplier, asset_class")
+      .select("quantity, avg_cost, multiplier, asset_class, instruments(symbol)")
       .eq("portfolio_id", portfolioId)
       .eq("status", "open"),
     supabase
@@ -66,13 +69,17 @@ export default async function DashboardPage({
     supabase.from("trades").select("realized_pnl").eq("portfolio_id", portfolioId),
   ]);
 
-  type Pos = { quantity: number; avg_cost: number; multiplier: number; asset_class: string };
-  const openPositions = (positions.data ?? []) as Pos[];
+  type Pos = {
+    quantity: number;
+    avg_cost: number;
+    multiplier: number;
+    asset_class: string;
+    instruments: { symbol: string } | null;
+  };
+  const openPositions = (positions.data ?? []) as unknown as Pos[];
   const cash = Number(pf.data?.cash_balance ?? 0);
-  const investedCost = openPositions.reduce(
-    (s, p) => s + Number(p.quantity) * Number(p.avg_cost) * Number(p.multiplier),
-    0,
-  );
+  const cost = (p: Pos) => Number(p.quantity) * Number(p.avg_cost) * Number(p.multiplier);
+  const investedCost = openPositions.reduce((s, p) => s + cost(p), 0);
   const nav = cash + investedCost;
   const realized = ((trades.data ?? []) as { realized_pnl: number }[]).reduce(
     (s, t) => s + Number(t.realized_pnl),
@@ -83,6 +90,11 @@ export default async function DashboardPage({
     | { version: number; summary: string | null; doc: Record<string, unknown> }
     | null;
   const activeStrategies = (strategy?.doc?.active_strategies as string[] | undefined) ?? [];
+
+  const allocation = [
+    ...openPositions.map((p) => ({ label: p.instruments?.symbol ?? "?", value: cost(p) })),
+    ...(cash > 0 ? [{ label: "Cash", value: cash }] : []),
+  ].filter((a) => a.value > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -101,6 +113,19 @@ export default async function DashboardPage({
           sub={target ? target.period : undefined}
         />
         <StatTile label="Strategy" value={strategy ? `v${strategy.version}` : "—"} sub="current" />
+      </div>
+
+      <InstrumentChart initialSymbol="SPY" />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-[var(--color-border)] p-4">
+          <h2 className="mb-2 text-sm font-semibold">Allocation</h2>
+          <AllocationChart data={allocation} />
+        </div>
+        <TargetReturnMeter
+          targetPct={target ? Number(target.target_pct) : null}
+          period={target?.period}
+        />
       </div>
 
       <section className="rounded-lg border border-[var(--color-border)] p-4">
@@ -123,7 +148,7 @@ export default async function DashboardPage({
       </section>
 
       <p className="text-xs text-[var(--color-muted-foreground)]">
-        Live mark-to-market P&L and charts arrive with the market-data stream (M4). Values shown
+        Live mark-to-market P&L streams in once the market-data worker is deployed. Values shown
         are at cost basis.
       </p>
     </div>
