@@ -12,12 +12,9 @@ import {
 } from "./anthropic";
 import { agentPreflight } from "./budget";
 import { readStrategyTool, readPositionsTool, screenWatchlistTool } from "./tools";
+import { scanMarketTool } from "./market-tools";
 import { SCOUT_SYSTEM } from "./prompts";
 import type { ToolDeps } from "./deps";
-
-const DEFAULT_UNIVERSE = [
-  "SPY", "QQQ", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "AVGO", "JPM", "XLE", "XLK",
-];
 
 export interface ScoutResult {
   candidates: number;
@@ -47,7 +44,6 @@ export async function runScout(portfolioId: string): Promise<ScoutResult> {
   const doc = ((strat as { doc?: Record<string, unknown> } | null)?.doc ?? {}) as Record<string, unknown>;
   const watchTickers = (doc.watchlist_tickers as string[] | undefined) ?? [];
   const themes = (doc.watchlist_themes as string[] | undefined) ?? [];
-  const universe = Array.from(new Set([...watchTickers, ...DEFAULT_UNIVERSE]));
 
   let emitted: EmittedCandidate[] = [];
   const emitCandidates = betaZodTool({
@@ -76,11 +72,21 @@ export async function runScout(portfolioId: string): Promise<ScoutResult> {
     model: MODELS.sonnet,
     max_tokens: 8000,
     system: SCOUT_SYSTEM,
-    tools: [readStrategyTool(deps), readPositionsTool(deps), screenWatchlistTool(deps), emitCandidates],
+    tools: [
+      readStrategyTool(deps),
+      readPositionsTool(deps),
+      scanMarketTool(deps),
+      screenWatchlistTool(deps),
+      emitCandidates,
+    ],
     messages: [
       {
         role: "user",
-        content: `Screen for long candidates now. Universe to consider: ${universe.join(", ")}. Strategy themes: ${JSON.stringify(themes)}. Read the strategy, screen the watchlist, then emit your ranked shortlist (max 8).`,
+        content: `Hunt the whole US market for fresh long candidates now. Strategy themes: ${JSON.stringify(
+          themes,
+        )}. Strategy watchlist: ${
+          watchTickers.length ? watchTickers.join(", ") : "(none)"
+        }. Read the strategy and current positions, run scan_market across styles that fit the posture (excluding names already held), confirm trend on your finalists with screen_watchlist, then emit a ranked, DIVERSE shortlist (max 8) spread across sectors.`,
       },
     ],
   });
