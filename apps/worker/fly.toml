@@ -1,0 +1,26 @@
+app = "raoinvestments-worker"
+primary_region = "iad" # us-east-1, matches the Supabase project region
+
+[build]
+  dockerfile = "apps/worker/Dockerfile" # relative to the repo-root build context
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1 # always-on: the single upstream Massive socket lives here
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "20s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,10 +1,15 @@
-// Always-on WebSocket relay worker (deploys to Fly.io).
-// Holds ONE upstream Massive/Polygon socket and fans quotes/marks out via Supabase
-// Realtime Broadcast. Real implementation lands in M2 (see the build plan, section D).
+import { config } from "./config";
+import { startHealthServer } from "./health";
+import { startRelay } from "./relay";
 
-function main(): void {
-  // eslint-disable-next-line no-console
-  console.log("raoinvestments worker: M0 stub — WS relay implemented in M2.");
+async function main(): Promise<void> {
+  console.log("raoinvestments worker starting…");
+  const relay = await startRelay();
+  startHealthServer(config.port, () => relay.status());
+  console.log("[worker] relay + health up");
 }
 
-main();
+main().catch((err) => {
+  console.error("[worker] fatal", err);
+  process.exit(1);
+});

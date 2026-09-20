@@ -6,13 +6,20 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc -p tsconfig.json --noEmit",
+    "build": "tsup src/index.ts --format esm --target node22 --clean",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(worker) lint: TODO\"",
     "test": "echo \"(worker) no tests yet\""
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.18.1",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.14",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "ws": "^8.21.3"
   }
 }
