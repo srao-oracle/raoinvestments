@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-6 px-6 py-16">
@@ -15,13 +17,18 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-        <p className="font-medium text-[var(--color-foreground)]">M0 — Foundations</p>
-        <p className="mt-1">
-          Monorepo scaffolded. Data model &amp; auth land in M1, market data in M2. Access will be
-          email-allowlisted. Not investment advice.
-        </p>
+      <div>
+        <Link
+          href="/login"
+          className="inline-flex h-11 items-center rounded-md bg-[var(--color-primary)] px-5 font-medium text-[var(--color-primary-foreground)]"
+        >
+          Sign in
+        </Link>
       </div>
+
+      <p className="text-xs text-[var(--color-muted-foreground)]">
+        Private &amp; invite-only. For informational purposes; not investment advice.
+      </p>
     </main>
   );
 }
