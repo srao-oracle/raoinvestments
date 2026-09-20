@@ -1,0 +1,14 @@
+{
+  "name": "RaoInvestments",
+  "short_name": "RaoInvest",
+  "description": "AI portfolio manager for stocks & options.",
+  "start_url": "/portfolios",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0f",
+  "theme_color": "#0b0b0f",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

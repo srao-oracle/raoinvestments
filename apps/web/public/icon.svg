@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#0b0b0f"/>
+  <path d="M96 352 L200 236 L280 300 L416 150" fill="none" stroke="#3b82f6" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M416 150 L416 214 M416 150 L352 150" fill="none" stroke="#3b82f6" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="452" font-family="ui-sans-serif,system-ui,Arial" font-size="120" font-weight="700" fill="#f8fafc" text-anchor="middle">R</text>
+</svg>
