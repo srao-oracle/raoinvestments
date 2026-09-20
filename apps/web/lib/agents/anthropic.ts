@@ -90,3 +90,22 @@ export async function drainRunner(
   }
   return { final: runner.done(), inputTokens, outputTokens, refused };
 }
+
+/** Drain a runner and record the run's token cost. Returns terminal status. */
+export async function drainAndLog(
+  runner: unknown,
+  meta: { role: string; portfolioId: string; admin: SupabaseClient; model: string; threadId?: string },
+): Promise<{ status: "succeeded" | "failed"; refused: boolean }> {
+  const { inputTokens, outputTokens, refused } = await drainRunner(runner as DrainableRunner);
+  const status = refused ? "failed" : "succeeded";
+  await logAgentRun(meta.admin, {
+    portfolioId: meta.portfolioId,
+    role: meta.role,
+    model: meta.model,
+    inputTokens,
+    outputTokens,
+    status,
+    threadId: meta.threadId,
+  });
+  return { status, refused };
+}
