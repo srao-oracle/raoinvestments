@@ -88,3 +88,21 @@ export function screenWatchlistTool(deps: ToolDeps) {
     },
   });
 }
+
+/** List the portfolio's opportunities and pipeline status. */
+export function listOpportunitiesTool(deps: ToolDeps) {
+  return betaZodTool({
+    name: "list_opportunities",
+    description: "List the portfolio's opportunities with their pipeline status, direction, conviction, and thesis.",
+    inputSchema: z.object({}),
+    run: async () => {
+      const { data } = await deps.admin
+        .from("opportunities")
+        .select("title, status, direction, conviction, position_size_pct, thesis")
+        .eq("portfolio_id", deps.portfolioId)
+        .order("updated_at", { ascending: false })
+        .limit(30);
+      return JSON.stringify(data ?? []);
+    },
+  });
+}

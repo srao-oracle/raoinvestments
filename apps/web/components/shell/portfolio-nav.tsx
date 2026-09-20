@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Wallet, ArrowLeftRight, PiggyBank, Lightbulb } from "lucide-react";
+import {
+  LayoutDashboard,
+  Wallet,
+  ArrowLeftRight,
+  PiggyBank,
+  Lightbulb,
+  MessageCircle,
+} from "lucide-react";
 
 export function PortfolioNav({ portfolioId }: { portfolioId: string }) {
   const pathname = usePathname();
@@ -11,6 +18,7 @@ export function PortfolioNav({ portfolioId }: { portfolioId: string }) {
   const items = [
     { href: base, label: "Dashboard", icon: LayoutDashboard, exact: true },
     { href: `${base}/opportunities`, label: "Ideas", icon: Lightbulb, exact: false },
+    { href: `${base}/chat`, label: "Chat", icon: MessageCircle, exact: false },
     { href: `${base}/positions`, label: "Positions", icon: Wallet, exact: false },
     { href: `${base}/trades`, label: "Trades", icon: ArrowLeftRight, exact: false },
     { href: `${base}/funds`, label: "Funds", icon: PiggyBank, exact: false },
