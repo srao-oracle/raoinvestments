@@ -1,8 +1,9 @@
 app = "raoinvestments-worker"
 primary_region = "iad" # us-east-1, matches the Supabase project region
 
-[build]
-  dockerfile = "apps/worker/Dockerfile" # deploy context = repo root (to bundle apps/web/lib)
+# Deploy from repo root with an explicit context + dockerfile so the image can
+# bundle apps/web/lib:
+#   fly deploy . -c apps/worker/fly.toml --dockerfile apps/worker/Dockerfile --remote-only
 
 [env]
   PORT = "8080"
