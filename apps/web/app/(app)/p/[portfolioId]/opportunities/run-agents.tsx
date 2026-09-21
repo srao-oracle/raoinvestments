@@ -10,11 +10,18 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function run(kind: "strategist" | "scout" | "pipeline") {
-    setBusy(kind);
+  async function run(
+    action: string,
+    kind: "strategist" | "scout" | "pipeline",
+    body?: Record<string, unknown>,
+  ) {
+    setBusy(action);
     setMsg(null);
     try {
-      const res = await fetch(`/api/agents/${portfolioId}/${kind}`, { method: "POST" });
+      const res = await fetch(`/api/agents/${portfolioId}/${kind}`, {
+        method: "POST",
+        ...(body ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}),
+      });
       // The response may be a non-JSON error page (e.g. a gateway timeout), so
       // parse defensively instead of letting res.json() throw "Unexpected token".
       const raw = await res.text();
@@ -22,8 +29,6 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
         error?: string;
         candidates?: number;
         updated?: boolean;
-        processed?: number;
-        results?: { symbol: string; outcome: string }[];
         queued?: boolean;
         alreadyRunning?: boolean;
       } = {};
@@ -31,9 +36,10 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
         data = raw ? JSON.parse(raw) : {};
       } catch {
         data = {
-          error: res.status === 504
-            ? "The agent took too long and the request timed out. It may still be running — refresh in a minute."
-            : raw.slice(0, 160) || `HTTP ${res.status}`,
+          error:
+            res.status === 504
+              ? "The request timed out. It may still be running — refresh in a minute."
+              : raw.slice(0, 160) || `HTTP ${res.status}`,
         };
       }
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
@@ -43,8 +49,10 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
           : kind === "strategist"
             ? `Strategy: ${data.updated ? "updated" : "unchanged"}.`
             : data.alreadyRunning
-              ? "An analysis is already running in the background."
-              : "Analysis queued — the deep Opus research runs in the background (~15–20 min). Candidates move Investigating → Proposed as it finishes; refresh to check.",
+              ? "An analysis run is already in progress in the background."
+              : action === "build"
+                ? "Building the portfolio — the worker deep-analyzes candidates and proposes sized trades to fully invest the book (runs in the background; refresh to watch candidates move to Proposed)."
+                : "Analysis queued — the deep Opus research runs in the background (~15–20 min). Candidates move Investigating → Proposed as it finishes; refresh to check.",
       );
       startTransition(() => router.refresh());
     } catch (e) {
@@ -56,19 +64,32 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
 
   const btn =
     "inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)] disabled:opacity-50";
+  const btnPrimary =
+    "inline-flex items-center gap-1.5 rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-50";
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Sparkles className="size-4 text-[var(--color-primary)]" aria-hidden />
-        <button className={btn} disabled={!!busy} onClick={() => run("strategist")}>
+        <Sparkles className="size-4" aria-hidden />
+        <button className={btn} disabled={!!busy} onClick={() => run("strategist", "strategist")}>
           {busy === "strategist" ? "Refreshing…" : "Refresh strategy"}
         </button>
-        <button className={btn} disabled={!!busy} onClick={() => run("scout")}>
+        <button className={btn} disabled={!!busy} onClick={() => run("scout", "scout")}>
           {busy === "scout" ? "Scouting…" : "Scout ideas"}
         </button>
-        <button className={btn} disabled={!!busy} onClick={() => run("pipeline")}>
-          {busy === "pipeline" ? "Analyzing…" : "Analyze candidate"}
+        <button
+          className={btn}
+          disabled={!!busy}
+          onClick={() => run("pipeline", "pipeline", { maxCandidates: 1 })}
+        >
+          {busy === "pipeline" ? "Queuing…" : "Analyze one"}
+        </button>
+        <button
+          className={btnPrimary}
+          disabled={!!busy}
+          onClick={() => run("build", "pipeline", { maxCandidates: 15 })}
+        >
+          {busy === "build" ? "Queuing…" : "Build portfolio"}
         </button>
       </div>
       {msg ? <p className="text-xs text-[var(--color-muted-foreground)]">{msg}</p> : null}

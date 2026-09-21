@@ -60,7 +60,7 @@ export async function runScout(portfolioId: string): Promise<ScoutResult> {
             suggested_structures: z.array(z.string()).default([]),
           }),
         )
-        .max(8),
+        .max(15),
     }),
     run: async ({ candidates }) => {
       emitted = candidates;
@@ -86,7 +86,7 @@ export async function runScout(portfolioId: string): Promise<ScoutResult> {
           themes,
         )}. Strategy watchlist: ${
           watchTickers.length ? watchTickers.join(", ") : "(none)"
-        }. Read the strategy and current positions, run scan_market across styles that fit the posture (excluding names already held), confirm trend on your finalists with screen_watchlist, then emit a ranked, DIVERSE shortlist (max 8) spread across sectors.`,
+        }. Read the strategy and current positions, run scan_market across styles that fit the posture (excluding names already held), confirm trend on your finalists with screen_watchlist, then emit a ranked, DIVERSE shortlist (aim for 10-15) spread across sectors — enough names to build a fully-invested, diversified book.`,
       },
     ],
   });

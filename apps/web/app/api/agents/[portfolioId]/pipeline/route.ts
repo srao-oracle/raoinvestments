@@ -24,7 +24,7 @@ export async function POST(
   if (!pf) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = (await req.json().catch(() => ({}))) as { maxCandidates?: number };
-  const maxCandidates = Math.min(Math.max(body.maxCandidates ?? 1, 1), 5);
+  const maxCandidates = Math.min(Math.max(body.maxCandidates ?? 1, 1), 25);
   const admin = createAdminClient();
 
   // Avoid piling up duplicate work: if one is already pending, return it.

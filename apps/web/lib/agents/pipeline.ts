@@ -13,7 +13,7 @@ import {
   getQuoteTool,
   getOptionChainTool,
 } from "./market-tools";
-import { valuePortfolioTool, sizePositionTool, checkRiskTool } from "./risk-tools";
+import { valuePortfolioTool, sizePositionTool, checkRiskTool, planAllocationTool } from "./risk-tools";
 import { fredSeriesTool } from "./macro-tools";
 import { RESEARCH_SYSTEM, RED_TEAM_SYSTEM, PM_SYSTEM, STRATEGIST_SYSTEM } from "./prompts";
 import type { ToolDeps } from "./deps";
@@ -266,11 +266,12 @@ async function runPM(
       readStrategyTool(deps),
       readPositionsTool(deps),
       valuePortfolioTool(deps),
+      planAllocationTool(deps),
       sizePositionTool(deps),
       checkRiskTool(deps),
       emitProposal,
     ],
-    `Decide whether to propose a trade for ${symbol}. Size it and call emit_proposal if it fits.\n\nThesis:\n${JSON.stringify(thesis)}\n\nVerdict:\n${JSON.stringify(verdict)}`,
+    `Decide whether to propose a trade for ${symbol}, sized to help FULLY INVEST the portfolio. Call plan_allocation to see how much capital remains to deploy toward the target invested %, then size this position (up to the per-position cap, scaled by conviction) to help fill the book — do not leave capital idle. Run check_risk, then call emit_proposal if it fits.\n\nThesis:\n${JSON.stringify(thesis)}\n\nVerdict:\n${JSON.stringify(verdict)}`,
   );
   return { proposal: holder.value, decision: holder.value ? "proposed" : "declined" };
 }
@@ -360,6 +361,14 @@ export async function runStrategist(
         .max(6),
       watchlist_tickers: z.array(z.string()).max(30),
       active_strategies: z.array(z.string()).max(10),
+      target_invested_pct: z
+        .number()
+        .min(0)
+        .max(100)
+        .default(90)
+        .describe("Target % of NAV to keep invested (deploy toward full investment; leave a small cash buffer)."),
+      max_position_pct: z.number().min(1).max(30).default(12).describe("Per-position cap as % of NAV."),
+      max_heat_pct: z.number().min(10).max(100).default(95).describe("Max total invested as % of NAV."),
       change_reason: z.string().max(300),
     }),
     run: async (p) => {
@@ -373,6 +382,7 @@ export async function runStrategist(
         string,
         unknown
       >;
+      const curRisk = (curDoc.risk ?? {}) as Record<string, number>;
       const newDoc = {
         ...curDoc,
         risk_posture: p.risk_posture,
@@ -381,6 +391,12 @@ export async function runStrategist(
         watchlist_themes: p.themes.map((t) => t.id),
         watchlist_tickers: p.watchlist_tickers,
         active_strategies: p.active_strategies,
+        target_invested_pct: p.target_invested_pct,
+        risk: {
+          ...curRisk,
+          max_position_pct: p.max_position_pct,
+          max_heat_pct: p.max_heat_pct,
+        },
       };
       summary = `${p.risk_posture} — ${p.regime_note.slice(0, 160)}`;
       const { error } = await admin.rpc("set_current_strategy", {
