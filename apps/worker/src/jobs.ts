@@ -73,6 +73,25 @@ async function runJob(job: Job): Promise<void> {
     .eq("id", job.id);
 }
 
+/** On startup, a fresh process has nothing running, so any job left 'running' and any
+ *  opportunity left 'under_investigation' was orphaned by a previous restart. Re-queue the
+ *  jobs and reset the candidates so nothing gets stranded. */
+export async function recoverOrphans(): Promise<void> {
+  const { data: jobs } = await supabase
+    .from("agent_jobs")
+    .update({ status: "queued", started_at: null })
+    .eq("status", "running")
+    .select("id");
+  const { data: opps } = await supabase
+    .from("opportunities")
+    .update({ status: "candidate" })
+    .eq("status", "under_investigation")
+    .select("id");
+  console.log(
+    `[jobs] recovery: re-queued ${jobs?.length ?? 0} orphaned job(s), reset ${opps?.length ?? 0} candidate(s)`,
+  );
+}
+
 /** Poll for queued agent jobs and run them one at a time (pipeline is heavy). */
 export function startJobPoller(intervalMs = 5000): () => void {
   let busy = false;
