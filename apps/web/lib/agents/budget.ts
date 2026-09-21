@@ -1,6 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const DAILY_BUDGET_USD = Number(process.env.DAILY_BUDGET_USD ?? 10);
+// Fallback only. The live cap is the app_settings 'daily_budget_usd' row (tunable
+// without a redeploy), falling back to this env default.
+export const DAILY_BUDGET_USD = Number(process.env.DAILY_BUDGET_USD ?? 100);
+
+async function budgetLimit(admin: SupabaseClient): Promise<number> {
+  const { data } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "daily_budget_usd")
+    .maybeSingle();
+  const v = (data as { value: unknown } | null)?.value;
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : DAILY_BUDGET_USD;
+}
 
 /** Gate before any spend: kill switch + per-portfolio daily agent budget. */
 export async function agentPreflight(admin: SupabaseClient, portfolioId: string): Promise<void> {
@@ -12,6 +25,7 @@ export async function agentPreflight(admin: SupabaseClient, portfolioId: string)
   const v = (ks as { value: unknown } | null)?.value;
   if (v === true || v === "true") throw new Error("kill switch is active");
 
+  const limit = await budgetLimit(admin);
   const today = new Date().toISOString().slice(0, 10);
   const { data: runs } = await admin
     .from("agent_runs")
@@ -19,8 +33,8 @@ export async function agentPreflight(admin: SupabaseClient, portfolioId: string)
     .eq("portfolio_id", portfolioId)
     .eq("day_key", today);
   const spent = ((runs ?? []) as { cost_usd: number }[]).reduce((s, r) => s + Number(r.cost_usd), 0);
-  if (spent >= DAILY_BUDGET_USD) {
-    throw new Error(`daily agent budget reached ($${spent.toFixed(2)} / $${DAILY_BUDGET_USD})`);
+  if (spent >= limit) {
+    throw new Error(`daily agent budget reached ($${spent.toFixed(2)} / $${limit})`);
   }
 }
 
