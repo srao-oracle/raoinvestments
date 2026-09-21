@@ -7,7 +7,7 @@ export interface AgentCfg {
   maxTokens: number;
 }
 
-type Role = "strategist" | "scout" | "research" | "red_team" | "portfolio_manager";
+type Role = "strategist" | "scout" | "research" | "red_team" | "portfolio_manager" | "hedger";
 
 // AGENT_TIER=test downshifts to a cheap/fast tier for smoke runs; default is production.
 const TEST = process.env.AGENT_TIER === "test";
@@ -19,6 +19,7 @@ export const AGENT_CONFIG: Record<Role, AgentCfg> = TEST
       research: { model: MODELS.sonnet, effort: "medium", maxTokens: 16000 },
       red_team: { model: MODELS.sonnet, effort: "medium", maxTokens: 12000 },
       portfolio_manager: { model: MODELS.sonnet, effort: "medium", maxTokens: 12000 },
+      hedger: { model: MODELS.sonnet, effort: "medium", maxTokens: 10000 },
     }
   : {
       strategist: { model: MODELS.sonnet, effort: "high", maxTokens: 12000 },
@@ -29,4 +30,5 @@ export const AGENT_CONFIG: Record<Role, AgentCfg> = TEST
       research: { model: MODELS.opus, effort: "max", maxTokens: 20000 },
       red_team: { model: MODELS.opus, effort: "xhigh", maxTokens: 20000 },
       portfolio_manager: { model: MODELS.opus, effort: "high", maxTokens: 16000 },
+      hedger: { model: MODELS.opus, effort: "high", maxTokens: 16000 },
     };

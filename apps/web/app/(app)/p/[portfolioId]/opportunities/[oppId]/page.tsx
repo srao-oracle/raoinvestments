@@ -19,9 +19,11 @@ function approveHref(
   direction: string | null,
   qty: number | null,
 ): string {
-  const assetClass = direction === "long_stock" ? "stock" : "option";
+  const assetClass = direction === "long_stock" || direction === "short_stock" ? "stock" : "option";
   const action =
-    direction === "covered_call" || direction === "csp" ? "sell_to_open" : "buy_to_open";
+    direction === "covered_call" || direction === "csp" || direction === "short_stock" || direction === "short_call"
+      ? "sell_to_open"
+      : "buy_to_open";
   const q = new URLSearchParams({
     oppId,
     symbol,

@@ -14,8 +14,9 @@ import {
   getOptionChainTool,
 } from "./market-tools";
 import { valuePortfolioTool, sizePositionTool, checkRiskTool, planAllocationTool } from "./risk-tools";
+import { portfolioDeltaTool, emitHedgeTool } from "./hedge-tools";
 import { fredSeriesTool } from "./macro-tools";
-import { RESEARCH_SYSTEM, RED_TEAM_SYSTEM, PM_SYSTEM, STRATEGIST_SYSTEM } from "./prompts";
+import { RESEARCH_SYSTEM, RED_TEAM_SYSTEM, PM_SYSTEM, STRATEGIST_SYSTEM, HEDGER_SYSTEM } from "./prompts";
 import type { ToolDeps } from "./deps";
 
 const WEB_SEARCH = { type: "web_search_20260209", name: "web_search", max_uses: 4 } as const;
@@ -329,6 +330,43 @@ export async function runPipeline(
   }
 
   return { processed: (cands ?? []).length, results };
+}
+
+/** Hedger: protect the long book with an index overlay + single-name protective puts. */
+export async function runHedge(portfolioId: string): Promise<{ hedges: number }> {
+  const admin = createAdminClient();
+  await agentPreflight(admin, portfolioId);
+  const deps: ToolDeps = { portfolioId, admin, market: massive() };
+
+  const countHedges = async () => {
+    const { count } = await admin
+      .from("opportunities")
+      .select("id", { count: "exact", head: true })
+      .eq("portfolio_id", portfolioId)
+      .eq("source", "hedge")
+      .eq("status", "proposed");
+    return count ?? 0;
+  };
+  const before = await countHedges();
+
+  await runAgent(
+    "hedger",
+    AGENT_CONFIG.hedger,
+    deps,
+    HEDGER_SYSTEM,
+    [
+      valuePortfolioTool(deps),
+      readPositionsTool(deps),
+      portfolioDeltaTool(deps),
+      getBarsPlaybitTool(deps),
+      getQuoteTool(deps),
+      getOptionChainTool(deps),
+      emitHedgeTool(deps),
+    ],
+    "Hedge the book now. Call portfolio_delta to see net long exposure and how much hedge is needed, read positions, pull the index (SPY/QQQ) and single-name option chains you need, then call emit_hedge once with a broad-index overlay plus protective puts on the largest longs.",
+  );
+  const after = await countHedges();
+  return { hedges: after - before };
 }
 
 /** Strategist: read macro + regime, then autonomously refresh the strategy doc (version bump). */

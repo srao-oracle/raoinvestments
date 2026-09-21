@@ -2,13 +2,13 @@ import { supabase } from "./supabase";
 // The agent pipeline lives in the web app but is plain TS (no Next deps in this
 // subtree). esbuild/tsup bundles it into the worker so long-running Opus jobs run
 // here on the always-on machine instead of a time-limited Vercel function.
-import { runPipeline, runStrategist } from "../../web/lib/agents/pipeline";
+import { runPipeline, runStrategist, runHedge } from "../../web/lib/agents/pipeline";
 import { runScout } from "../../web/lib/agents/scout";
 
 type Job = {
   id: string;
   portfolio_id: string;
-  kind: "pipeline" | "scout" | "strategist";
+  kind: "pipeline" | "scout" | "strategist" | "hedge";
   params: Record<string, unknown>;
 };
 
@@ -55,6 +55,8 @@ async function runJob(job: Job): Promise<void> {
       result = await runScout(job.portfolio_id);
     } else if (job.kind === "strategist") {
       result = await runStrategist(job.portfolio_id);
+    } else if (job.kind === "hedge") {
+      result = await runHedge(job.portfolio_id);
     } else {
       throw new Error(`unknown job kind: ${job.kind}`);
     }

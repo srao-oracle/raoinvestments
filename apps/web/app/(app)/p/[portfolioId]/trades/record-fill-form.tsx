@@ -10,11 +10,13 @@ const labelCls = "flex flex-col gap-1 text-xs text-[var(--color-muted-foreground
 const STOCK_ACTIONS = [
   { v: "buy_to_open", l: "Buy" },
   { v: "sell_to_close", l: "Sell" },
+  { v: "sell_to_open", l: "Sell to open (short / index hedge)" },
+  { v: "buy_to_close", l: "Buy to close (cover short)" },
 ];
 const OPTION_ACTIONS = [
-  { v: "buy_to_open", l: "Buy to open (long)" },
+  { v: "buy_to_open", l: "Buy to open (long / protective put)" },
   { v: "sell_to_close", l: "Sell to close" },
-  { v: "sell_to_open", l: "Sell to open (covered call / CSP)" },
+  { v: "sell_to_open", l: "Sell to open (covered call / CSP / short call)" },
   { v: "buy_to_close", l: "Buy to close" },
 ];
 

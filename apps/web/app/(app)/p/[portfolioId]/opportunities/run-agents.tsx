@@ -12,7 +12,7 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
 
   async function run(
     action: string,
-    kind: "strategist" | "scout" | "pipeline",
+    kind: "strategist" | "scout" | "pipeline" | "hedge",
     body?: Record<string, unknown>,
   ) {
     setBusy(action);
@@ -48,11 +48,15 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
           ? `Scout found ${data.candidates} candidates.`
           : kind === "strategist"
             ? `Strategy: ${data.updated ? "updated" : "unchanged"}.`
-            : data.alreadyRunning
-              ? "An analysis run is already in progress in the background."
-              : action === "build"
-                ? "Building the portfolio — the worker deep-analyzes candidates and proposes sized trades to fully invest the book (runs in the background; refresh to watch candidates move to Proposed)."
-                : "Analysis queued — the deep Opus research runs in the background (~15–20 min). Candidates move Investigating → Proposed as it finishes; refresh to check.",
+            : kind === "hedge"
+              ? data.alreadyRunning
+                ? "A hedge run is already in progress."
+                : "Hedging queued — the hedger builds an index overlay + protective puts on the largest longs (runs in the background; refresh to see hedge proposals)."
+              : data.alreadyRunning
+                ? "An analysis run is already in progress in the background."
+                : action === "build"
+                  ? "Building the portfolio — the worker deep-analyzes candidates and proposes sized trades to fully invest the book (runs in the background; refresh to watch candidates move to Proposed)."
+                  : "Analysis queued — the deep Opus research runs in the background (~15–20 min). Candidates move Investigating → Proposed as it finishes; refresh to check.",
       );
       startTransition(() => router.refresh());
     } catch (e) {
@@ -90,6 +94,9 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
           onClick={() => run("build", "pipeline", { maxCandidates: 15 })}
         >
           {busy === "build" ? "Queuing…" : "Build portfolio"}
+        </button>
+        <button className={btn} disabled={!!busy} onClick={() => run("hedge", "hedge")}>
+          {busy === "hedge" ? "Queuing…" : "Hedge book"}
         </button>
       </div>
       {msg ? <p className="text-xs text-[var(--color-muted-foreground)]">{msg}</p> : null}
