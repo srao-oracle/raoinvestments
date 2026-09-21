@@ -1,11 +1,14 @@
+# Fly worker build context = repo root; keep it lean and secret-free.
 **/node_modules
 **/.next
 **/dist
-**/.turbo
 .git
-.github
-**/.env
-**/.env.local
-**/.env.*.local
+worktrees
 *.log
-.vercel
+.env
+.env.*
+**/.env
+**/.env.*
+apps/web/.vercel
+supabase/.branches
+supabase/.temp

@@ -8,7 +8,7 @@
   ],
   "functions": {
     "app/api/cron/[job]/route.ts": { "maxDuration": 300 },
-    "app/api/agents/[portfolioId]/pipeline/route.ts": { "maxDuration": 800 },
+    "app/api/agents/[portfolioId]/pipeline/route.ts": { "maxDuration": 30 },
     "app/api/agents/[portfolioId]/scout/route.ts": { "maxDuration": 300 },
     "app/api/agents/[portfolioId]/strategist/route.ts": { "maxDuration": 300 }
   }

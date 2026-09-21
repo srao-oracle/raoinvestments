@@ -2,7 +2,7 @@ app = "raoinvestments-worker"
 primary_region = "iad" # us-east-1, matches the Supabase project region
 
 [build]
-  dockerfile = "Dockerfile" # relative to apps/worker (the deploy context)
+  dockerfile = "apps/worker/Dockerfile" # deploy context = repo root (to bundle apps/web/lib)
 
 [env]
   PORT = "8080"

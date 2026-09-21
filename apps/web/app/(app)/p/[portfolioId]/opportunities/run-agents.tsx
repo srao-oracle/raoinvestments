@@ -24,6 +24,8 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
         updated?: boolean;
         processed?: number;
         results?: { symbol: string; outcome: string }[];
+        queued?: boolean;
+        alreadyRunning?: boolean;
       } = {};
       try {
         data = raw ? JSON.parse(raw) : {};
@@ -40,7 +42,9 @@ export function RunAgents({ portfolioId }: { portfolioId: string }) {
           ? `Scout found ${data.candidates} candidates.`
           : kind === "strategist"
             ? `Strategy: ${data.updated ? "updated" : "unchanged"}.`
-            : `Pipeline processed ${data.processed}: ${(data.results ?? []).map((r: { symbol: string; outcome: string }) => `${r.symbol}=${r.outcome}`).join(", ")}`,
+            : data.alreadyRunning
+              ? "An analysis is already running in the background."
+              : "Analysis queued — the deep Opus research runs in the background (~15–20 min). Candidates move Investigating → Proposed as it finishes; refresh to check.",
       );
       startTransition(() => router.refresh());
     } catch (e) {

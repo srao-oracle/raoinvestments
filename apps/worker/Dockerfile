@@ -1,12 +1,16 @@
-# Standalone worker image. Build context = apps/worker (deploy from that dir).
+# Build context = repo ROOT (so the worker can bundle apps/web/lib agent code).
+# Deploy with: fly deploy -c apps/worker/fly.toml (run from repo root).
 FROM node:22-slim
-WORKDIR /app
+WORKDIR /app/apps/worker
 
-COPY package.json ./
+COPY apps/worker/package.json ./
 RUN npm install
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY apps/worker/tsconfig.json ./
+COPY apps/worker/src ./src
+# The agent pipeline (plain TS) is imported via ../../web/lib and bundled by tsup.
+COPY apps/web/lib /app/apps/web/lib
+
 RUN npm run build
 
 ENV NODE_ENV=production
